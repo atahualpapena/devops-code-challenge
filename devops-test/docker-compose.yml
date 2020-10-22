@@ -1,0 +1,70 @@
+version: '3'
+
+networks:
+    laravel:
+
+services: 
+    nginx:
+        image: nginx:stable-alpine
+        container_name: nginx
+        ports:
+            - 8088:80
+        volumes:
+            - ./src:/var/www/html
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php
+            - mysql
+        networks:
+            - laravel
+    
+    mysql:
+        image: mysql:5.7.22
+        container_name: mysql
+        restart: unless-stopped
+        tty: true
+        ports:
+            - 3306:3306
+        volumes:
+            - ./mysql:/var/lib/mysql
+        environment:
+            MYSQL_DATABASE: my_db
+            MYSQL_ROOT_PASSWORD: test
+            MYSQL_USER: root
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        networks:
+            - laravel
+        expose:
+            - 3306
+
+    php:
+        build: src/api-1
+        container_name: php
+        user: root
+        environment:
+            - BASE_URL=http://php-proxy:9001
+            - DB_HOST=localhost
+            - DB_PORT=3306
+            - DB_DATABASE=my_db
+            - DB_USERNAME=user
+            - DB_PASSWORD=secret
+            - APP_ENV=development
+        networks:
+            - laravel
+        depends_on:
+            - mysql
+        ports:
+            - 80:80
+        expose:
+            - 80
+
+    php-proxy:
+        build: src/api-2
+        container_name: php-proxy
+        ports:
+            - 9001:80
+        expose:
+            - 9001
+        networks:
+            - laravel
