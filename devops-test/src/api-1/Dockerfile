@@ -3,18 +3,20 @@ FROM php:7.2-fpm
 WORKDIR /var/www/html
 COPY . .
 
-RUN docker-php-ext-install pdo pdo_mysql
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN apt-get update -q -y \
     && apt-get install -q -y --no-install-recommends \
     ca-certificates \
-    curl \
+    wget \
+    zip \
+    netcat \
+    unzip \
     acl \
     sudo \
     git 
-RUN apt install zip unzip
-RUN composer --version
-RUN composer install --prefer-dist
+RUN docker-php-ext-install pdo pdo_mysql mysqli 
+RUN wget https://getcomposer.org/download/1.10.15/composer.phar
+RUN php composer.phar install
+# RUN composer install --prefer-dist
 RUN pwd
 RUN ls -la
 # RUN chmod +x /var/www/html/entrypoint.sh
